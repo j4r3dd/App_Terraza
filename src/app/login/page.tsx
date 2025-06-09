@@ -40,6 +40,9 @@ export default function LoginPage() {
       case 'caja':
         router.push('/caja')
         break
+      case 'admin':
+        router.push('/admin')
+        break
       default:
         setError('Rol desconocido')
     }
