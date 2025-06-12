@@ -21,7 +21,6 @@ type ProductoEnPedido = {
 
 export default function MeseroPage() {
   const [mesa, setMesa] = useState<string | null>(null)
-  const [productos, setProductos] = useState<Producto[]>([])
   const [productosComida, setProductosComida] = useState<Producto[]>([])
   const [productosBebida, setProductosBebida] = useState<Producto[]>([])
   const [pedido, setPedido] = useState<ProductoEnPedido[]>([])
@@ -35,9 +34,9 @@ export default function MeseroPage() {
   const cargarProductos = async () => {
     const { data } = await supabase.from("productos").select("*").order("nombre")
     if (data) {
-      setProductos(data as Producto[])
-      setProductosComida(data.filter(p => p.tipo === "comida"))
-      setProductosBebida(data.filter(p => p.tipo === "bebida"))
+      const productos = data as Producto[]
+      setProductosComida(productos.filter(p => p.tipo === "comida"))
+      setProductosBebida(productos.filter(p => p.tipo === "bebida"))
     }
   }
 
