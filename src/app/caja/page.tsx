@@ -114,7 +114,7 @@ export default function CajaPage() {
       // Calcular total para órdenes que no lo tengan
       const ordenesConTotal = data.map(orden => ({
         ...orden,
-        total: orden.total || orden.productos.reduce((sum: number, p: any) => sum + (p.precio || 0), 0)
+        total: orden.total || orden.productos.reduce((sum: number, p: { nombre: string; precio: number }) => sum + (p.precio || 0), 0) 
       }))
       setOrdenes(ordenesConTotal as Orden[])
     }
