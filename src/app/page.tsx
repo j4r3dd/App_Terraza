@@ -22,11 +22,8 @@ export default function Home() {
       {/* Logo o título del restaurante */}
       <div className="text-center mb-16">
         <h1 className="text-6xl md:text-7xl font-bold text-amber-800 mb-4">
-          🍻 Bar & Grill
+          Terraza Madero 
         </h1>
-        <p className="text-xl text-amber-700 font-medium">
-          Bienvenido a nuestro restaurante
-        </p>
       </div>
 
       {/* Botón principal del MENÚ */}
