@@ -22,7 +22,7 @@ export default function ProtectedRoute({ children, allowRoles }: Props) {
     if (!allowRoles.includes(user.rol)) {
       router.push('/login')
     }
-  }, [])
+  }, [allowRoles, router]) // 👈 Agregué las dependencias faltantes
 
   return <>{children}</>
 }

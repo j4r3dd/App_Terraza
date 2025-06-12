@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Configurar imágenes externas
   images: {
     remotePatterns: [
       {
@@ -10,6 +11,11 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  
+  // Configuración de ESLint más permisiva (temporal)
+  eslint: {
+    ignoreDuringBuilds: false, // Mejor mantener los errores visibles
   },
 };
 
