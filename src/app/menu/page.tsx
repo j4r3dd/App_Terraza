@@ -6,13 +6,17 @@ import { useRouter } from 'next/navigation'
 export default function MenuPage() {
   const router = useRouter()
 
+  const handleGoBack = () => {
+    router.push('/')
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 p-4">
       {/* Header con botón de regreso */}
       <div className="max-w-4xl mx-auto mb-6">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => router.push('/')}
+            onClick={handleGoBack}
             className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
           >
             ← Volver al Inicio
@@ -28,7 +32,7 @@ export default function MenuPage() {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-4">
         <div className="relative w-full h-auto">
           <Image
-            src="/menu.png"
+            src="https://raw.githubusercontent.com/j4r3dd/App_Terraza/main/menu.png"
             alt="Menú del restaurante"
             width={800}
             height={1200}

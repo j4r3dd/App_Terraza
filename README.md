@@ -21,16 +21,6 @@ Tabla personalizada para login por nombre de usuario y contraseña.
 🔐 **Row Level Security (RLS):** Activado  
 🔁 **Contraseñas encriptadas:** No (por ahora), se agregará soporte con bcrypt posteriormente.
 
-#### Datos de prueba insertados:
-
-| username | password | rol     |
-|----------|----------|---------|
-| Mesero1  | 1234     | mesero  |
-| Mesero2  | 1234     | mesero  |
-| cocina   | cocina   | cocina  |
-| barman   | barman   | barman  |
-
----
 
 ## 🚫 No se usa Supabase Auth oficial
 
