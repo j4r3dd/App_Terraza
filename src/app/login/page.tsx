@@ -16,14 +16,14 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { data, error } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from('usuarios')
         .select('*')
         .eq('username', username)
         .eq('password', password)
         .single()
 
-      if (error || !data) {
+      if (supabaseError || !data) {
         setError('Usuario o contraseña incorrectos')
         return
       }
