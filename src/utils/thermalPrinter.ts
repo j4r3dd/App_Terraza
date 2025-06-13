@@ -219,9 +219,9 @@ export async function detectarImpresoras(): Promise<boolean> {
 }
 
 /**
- * Solicita acceso a puerto serie para impresora
+ * Solicita acceso a puerto serie para impresora CON filtros de fabricante
  */
-export async function solicitarAccesoImpresora(): Promise<SerialPort> {
+export async function solicitarAccesoImpresoraConFiltros(): Promise<SerialPort> {
   if ('serial' in navigator && navigator.serial) {
     try {
       const port = await navigator.serial.requestPort({
@@ -229,8 +229,29 @@ export async function solicitarAccesoImpresora(): Promise<SerialPort> {
           { usbVendorId: 0x04b8 }, // Epson
           { usbVendorId: 0x0519 }, // Citizen
           { usbVendorId: 0x20d1 }, // Generic thermal printers
+          { usbVendorId: 0x0483 }, // STMicroelectronics
+          { usbVendorId: 0x0fe6 }, // ICS Advent
+          { usbVendorId: 0x1504 }, // Xprinter
+          { usbVendorId: 0x0416 }, // Winbond Electronics
         ]
       })
+      return port
+    } catch (error) {
+      console.error('Error al solicitar acceso a impresora:', error)
+      throw new Error('No se encontraron dispositivos compatibles o se canceló la selección')
+    }
+  }
+  throw new Error('Web Serial API no soportada')
+}
+
+/**
+ * Solicita acceso a puerto serie para impresora SIN filtros (cualquier dispositivo)
+ */
+export async function solicitarAccesoImpresora(): Promise<SerialPort> {
+  if ('serial' in navigator && navigator.serial) {
+    try {
+      // Sin filtros para permitir cualquier dispositivo serie
+      const port = await navigator.serial.requestPort()
       return port
     } catch (error) {
       console.error('Error al solicitar acceso a impresora:', error)
@@ -241,11 +262,72 @@ export async function solicitarAccesoImpresora(): Promise<SerialPort> {
 }
 
 /**
+ * Genera un ticket de prueba
+ */
+function generarTicketPrueba(): string {
+  let ticket = ''
+  
+  ticket += COMMANDS.INIT
+  ticket += COMMANDS.ALIGN_CENTER
+  ticket += COMMANDS.BOLD_ON
+  ticket += COMMANDS.DOUBLE_HEIGHT
+  ticket += 'PRUEBA DE IMPRESION\n'
+  ticket += COMMANDS.NORMAL_SIZE
+  ticket += COMMANDS.BOLD_OFF
+  ticket += '================================\n'
+  ticket += COMMANDS.ALIGN_LEFT
+  
+  ticket += 'Fecha: ' + new Date().toLocaleString('es-MX') + '\n'
+  ticket += '--------------------------------\n'
+  
+  ticket += 'Si puedes leer esto,\n'
+  ticket += 'la impresora esta funcionando\n'
+  ticket += 'correctamente!\n'
+  ticket += '\n'
+  
+  ticket += COMMANDS.ALIGN_CENTER
+  ticket += '================================\n'
+  ticket += 'Configuracion exitosa\n'
+  ticket += '\n\n'
+  
+  ticket += COMMANDS.PAPER_CUT
+  
+  return ticket
+}
+
+/**
+ * Prueba la conexión con la impresora
+ */
+export async function probarConexionImpresora(): Promise<void> {
+  try {
+    // Intenta obtener un puerto ya autorizado
+    const ports = await navigator.serial.getPorts()
+    
+    if (ports.length === 0) {
+      // Si no hay puertos, solicita uno nuevo
+      const port = await solicitarAccesoImpresora()
+      const ticketData = generarTicketPrueba()
+      await imprimirEnImpresora(port, ticketData)
+    } else {
+      // Usa el primer puerto disponible
+      const ticketData = generarTicketPrueba()
+      await imprimirEnImpresora(ports[0], ticketData)
+    }
+  } catch (error) {
+    console.error('Error en prueba de impresión:', error)
+    throw error
+  }
+}
+
+/**
  * Envía datos a la impresora térmica
  */
 export async function imprimirEnImpresora(port: SerialPort, data: string): Promise<void> {
   try {
-    await port.open({ baudRate: 9600 })
+    // Verifica si el puerto ya está abierto
+    if (!port.readable || !port.writable) {
+      await port.open({ baudRate: 9600 })
+    }
     
     const writer = port.writable?.getWriter()
     if (!writer) {
@@ -257,7 +339,11 @@ export async function imprimirEnImpresora(port: SerialPort, data: string): Promi
     await writer.write(encoder.encode(data))
     
     writer.releaseLock()
-    await port.close()
+    
+    // Solo cierra si el puerto estaba cerrado antes
+    if (port.readable && port.writable) {
+      await port.close()
+    }
     
   } catch (error) {
     console.error('Error al imprimir:', error)
@@ -270,15 +356,19 @@ export async function imprimirEnImpresora(port: SerialPort, data: string): Promi
  */
 export async function imprimirTicket(orden: Orden): Promise<void> {
   try {
-    // Solicitar acceso a impresora
-    const port = await solicitarAccesoImpresora()
+    // Primero intenta usar un puerto ya autorizado
+    const ports = await navigator.serial.getPorts()
     
-    // Generar contenido del ticket
-    const ticketData = generarTicketCuenta(orden)
-    
-    // Enviar a impresora
-    await imprimirEnImpresora(port, ticketData)
-    
+    if (ports.length > 0) {
+      // Usa el primer puerto disponible
+      const ticketData = generarTicketCuenta(orden)
+      await imprimirEnImpresora(ports[0], ticketData)
+    } else {
+      // Si no hay puertos, solicita uno nuevo
+      const port = await solicitarAccesoImpresora()
+      const ticketData = generarTicketCuenta(orden)
+      await imprimirEnImpresora(port, ticketData)
+    }
   } catch (error) {
     console.error('Error en impresión:', error)
     throw error
@@ -290,9 +380,19 @@ export async function imprimirTicket(orden: Orden): Promise<void> {
  */
 export async function imprimirReporteCierre(ventas: VentasDelDia): Promise<void> {
   try {
-    const port = await solicitarAccesoImpresora()
-    const ticketData = generarTicketCierre(ventas)
-    await imprimirEnImpresora(port, ticketData)
+    // Primero intenta usar un puerto ya autorizado
+    const ports = await navigator.serial.getPorts()
+    
+    if (ports.length > 0) {
+      // Usa el primer puerto disponible
+      const ticketData = generarTicketCierre(ventas)
+      await imprimirEnImpresora(ports[0], ticketData)
+    } else {
+      // Si no hay puertos, solicita uno nuevo
+      const port = await solicitarAccesoImpresora()
+      const ticketData = generarTicketCierre(ventas)
+      await imprimirEnImpresora(port, ticketData)
+    }
   } catch (error) {
     console.error('Error en impresión de reporte:', error)
     throw error
