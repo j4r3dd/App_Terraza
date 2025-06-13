@@ -2,7 +2,7 @@
 "use client"
 
 // 1. Importa 'useRef' junto a los otros hooks de React
-import { useEffect, useState, useRef } from "react" 
+import { useEffect, useState } from "react" 
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "../../../supabase/client"
 import { PDFDownloadLink } from "@react-pdf/renderer";
