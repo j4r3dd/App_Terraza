@@ -206,9 +206,9 @@ export function generarTicketCierre(ventas: VentasDelDia): string {
  * Detecta si hay impresoras disponibles via Web Serial API
  */
 export async function detectarImpresoras(): Promise<boolean> {
-  if ('serial' in navigator) {
+  if ('serial' in navigator && navigator.serial) {
     try {
-      const ports = await (navigator as any).serial.getPorts()
+      const ports = await navigator.serial.getPorts()
       return ports.length > 0
     } catch (error) {
       console.log('Web Serial API no disponible:', error)
@@ -221,10 +221,10 @@ export async function detectarImpresoras(): Promise<boolean> {
 /**
  * Solicita acceso a puerto serie para impresora
  */
-export async function solicitarAccesoImpresora(): Promise<any> {
-  if ('serial' in navigator) {
+export async function solicitarAccesoImpresora(): Promise<SerialPort> {
+  if ('serial' in navigator && navigator.serial) {
     try {
-      const port = await (navigator as any).serial.requestPort({
+      const port = await navigator.serial.requestPort({
         filters: [
           { usbVendorId: 0x04b8 }, // Epson
           { usbVendorId: 0x0519 }, // Citizen
@@ -243,11 +243,15 @@ export async function solicitarAccesoImpresora(): Promise<any> {
 /**
  * Envía datos a la impresora térmica
  */
-export async function imprimirEnImpresora(port: any, data: string): Promise<void> {
+export async function imprimirEnImpresora(port: SerialPort, data: string): Promise<void> {
   try {
     await port.open({ baudRate: 9600 })
     
-    const writer = port.writable.getWriter()
+    const writer = port.writable?.getWriter()
+    if (!writer) {
+      throw new Error('No se pudo obtener el writer del puerto')
+    }
+    
     const encoder = new TextEncoder()
     
     await writer.write(encoder.encode(data))

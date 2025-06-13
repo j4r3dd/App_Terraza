@@ -8,9 +8,11 @@ interface PrinterSetupProps {
   onClose: () => void
 }
 
+type EstadoImpresora = 'checking' | 'available' | 'not_supported' | 'connecting' | 'connected' | 'error'
+
 export default function PrinterSetup({ onClose }: PrinterSetupProps) {
-  const [estado, setEstado] = useState<'checking' | 'available' | 'not_supported' | 'connecting' | 'connected' | 'error'>('checking')
-  const [puerto, setPuerto] = useState<any>(null)
+  const [estado, setEstado] = useState<EstadoImpresora>('checking')
+  const [puerto, setPuerto] = useState<SerialPort | null>(null)
   const [mensaje, setMensaje] = useState('')
 
   useEffect(() => {
@@ -18,7 +20,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
   }, [])
 
   const verificarSoporte = async () => {
-    if (!('serial' in navigator)) {
+    if (!('serial' in navigator) || !navigator.serial) {
       setEstado('not_supported')
       setMensaje('Tu navegador no soporta Web Serial API. Usa Chrome o Edge.')
       return
@@ -43,12 +45,12 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
       setPuerto(port)
       setEstado('connected')
       setMensaje('¡Impresora conectada correctamente!')
-    } catch (error: any) {
+    } catch (error: unknown) {
       setEstado('error')
-      if (error.name === 'NotFoundError') {
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'NotFoundError') {
         setMensaje('No se seleccionó ninguna impresora')
       } else {
-        setMensaje('Error al conectar con la impresora: ' + error.message)
+        setMensaje('Error al conectar con la impresora: ' + (error instanceof Error ? error.message : 'Error desconocido'))
       }
     }
   }
@@ -59,7 +61,11 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
     try {
       await puerto.open({ baudRate: 9600 })
       
-      const writer = puerto.writable.getWriter()
+      const writer = puerto.writable?.getWriter()
+      if (!writer) {
+        throw new Error('No se pudo obtener el writer del puerto')
+      }
+      
       const encoder = new TextEncoder()
       
       let testData = ''
@@ -87,8 +93,8 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
       
       setMensaje('Prueba de impresión enviada')
       
-    } catch (error: any) {
-      setMensaje('Error en prueba: ' + error.message)
+    } catch (error: unknown) {
+      setMensaje('Error en prueba: ' + (error instanceof Error ? error.message : 'Error desconocido'))
     }
   }
 
