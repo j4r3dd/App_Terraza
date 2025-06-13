@@ -2,7 +2,7 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 
-// Interfaces (sin cambios)
+// Interfaces
 interface Orden {
   productos: { nombre: string; precio: number }[];
 }
@@ -13,28 +13,28 @@ interface MesaBill {
   total: number;
 }
 
+// STYLES UPDATED FOR 58mm PRINTER
 const styles = StyleSheet.create({
   page: {
-    padding: 15,
-    // Ancho de 58mm
-    width: 164, 
+    padding: 10, // Reduced padding to maximize space
+    width: 164, // Corresponds to 58mm width
     fontFamily: 'Helvetica',
   },
   title: {
-    fontSize: 12,
+    fontSize: 50, // Increased from 12
     textAlign: 'center',
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 9,
+    fontSize: 50, // Increased from 9
     textAlign: 'center',
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   text: {
-    fontSize: 8,
-    marginBottom: 3,
+    fontSize: 30, // Increased from 8
+    marginBottom: 4,
   },
   table: {
     width: '100%',
@@ -44,21 +44,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 0.5,
     borderBottomColor: '#000',
-    paddingBottom: 2,
-    marginBottom: 2,
+    paddingBottom: 3,
+    marginBottom: 3,
     fontFamily: 'Helvetica-Bold',
-    fontSize: 8,
+    fontSize:30, // Increased from 8
   },
   tableRow: {
     flexDirection: 'row',
-    marginBottom: 2,
-    fontSize: 8,
+    marginBottom: 3,
+    fontSize: 30, // Increased from 8
   },
   colQty: {
-    width: '18%',
+    width: '15%', // Adjusted width
   },
   colDesc: {
-    width: '57%',
+    width: '60%', // Adjusted width
   },
   colPrice: {
     width: '25%',
@@ -70,16 +70,16 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   total: {
-    fontSize: 10,
+    fontSize: 50, // Increased from 10
     fontFamily: 'Helvetica-Bold',
     textAlign: 'right',
-    marginTop: 5,
+    marginTop: 8,
   },
   footer: {
-    fontSize: 8,
+    fontSize: 30, // Increased from 8
     textAlign: 'center',
-    marginTop: 15,
-    color: 'grey',
+    marginTop: 20,
+    color: 'black',
   }
 });
 
@@ -88,7 +88,6 @@ interface ReceiptPDFProps {
 }
 
 const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ bill }) => {
-    // Lógica para agrupar productos (sin cambios)
     const productosAgrupados: { [key: string]: { cantidad: number; precio: number } } = {};
     bill.ordenes.forEach(orden => {
         orden.productos.forEach(p => {
@@ -101,8 +100,6 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ bill }) => {
 
     return (
         <Document>
-            {/* ===== CORRECCIÓN AQUÍ ===== */}
-            {/* Se eliminó la propiedad 'size' para que la página se ajuste al contenido */}
             <Page style={styles.page}>
                 <Text style={styles.title}>Terraza Madero</Text>
                 <Text style={styles.subtitle}>PRE-CUENTA</Text>
