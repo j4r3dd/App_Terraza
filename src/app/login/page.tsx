@@ -51,7 +51,8 @@ export default function LoginPage() {
         default:
           setError('Rol desconocido')
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error al conectar con el servidor:', error)
       setError('Error al conectar con el servidor')
     } finally {
       setIsLoading(false)
