@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react"
 import ProtectedRoute from "@/components/ProtectedRoute"
-import PrinterSetup from "../../components/PrinterSetup"
 import { supabase } from "../../../supabase/client"
-import { 
-  imprimirTicket, 
-  imprimirReporteCierre, 
-  detectarImpresoras,
-  generarTicketCuenta 
-} from "../../utils/thermalPrinter"
 
 interface Orden {
   id: number
@@ -110,9 +103,6 @@ export default function CajaPage() {
   const [vistaActual, setVistaActual] = useState<'pendientes' | 'pagadas'>('pendientes')
   const [ordenSeleccionada, setOrdenSeleccionada] = useState<Orden | null>(null)
   const [loading, setLoading] = useState(false)
-  const [impresoraDisponible, setImpresoraDisponible] = useState(false)
-  const [imprimiendo, setImprimiendo] = useState<number | null>(null)
-  const [mostrarConfigImpresora, setMostrarConfigImpresora] = useState(false)
 
   const obtenerOrdenes = async () => {
     const { data } = await supabase
@@ -144,15 +134,9 @@ export default function CajaPage() {
     }
   }
 
-  const verificarImpresora = async () => {
-    const disponible = await detectarImpresoras()
-    setImpresoraDisponible(disponible)
-  }
-
   useEffect(() => {
     obtenerOrdenes()
     obtenerVentasDelDia()
-    verificarImpresora()
   }, [])
 
   const marcarPagado = async (orden: Orden, metodoPago: 'efectivo' | 'tarjeta') => {
@@ -182,59 +166,6 @@ export default function CajaPage() {
     }
   }
 
-  const handleImprimirTicket = async (orden: Orden) => {
-    setImprimiendo(orden.id)
-    try {
-      await imprimirTicket(orden)
-      alert('Ticket impreso correctamente')
-    } catch (error) {
-      console.error('Error al imprimir:', error)
-      alert('Error al imprimir. Verifique que la impresora esté conectada.')
-    } finally {
-      setImprimiendo(null)
-    }
-  }
-
-  const handleImprimirReporte = async () => {
-    if (!ventasDelDia) return
-    
-    setImprimiendo(-1) // Usamos -1 para el reporte
-    try {
-      await imprimirReporteCierre(ventasDelDia)
-      alert('Reporte de cierre impreso correctamente')
-    } catch (error) {
-      console.error('Error al imprimir reporte:', error)
-      alert('Error al imprimir reporte. Verifique que la impresora esté conectada.')
-    } finally {
-      setImprimiendo(null)
-    }
-  }
-
-  const previewTicket = (orden: Orden) => {
-    const ticketContent = generarTicketCuenta(orden)
-    const newWindow = window.open('', '_blank')
-    if (newWindow) {
-      newWindow.document.write(`
-        <html>
-          <head>
-            <title>Vista Previa - Ticket</title>
-            <style>
-              body { 
-                font-family: 'Courier New', monospace; 
-                font-size: 12px; 
-                line-height: 1.2; 
-                margin: 20px;
-                white-space: pre-wrap;
-              }
-            </style>
-          </head>
-          <body>${ticketContent.replace(/\n/g, '<br>')}</body>
-        </html>
-      `)
-      newWindow.document.close()
-    }
-  }
-
   const ordenesPendientes = ordenes.filter(o => o.estado !== 'pagado')
   const ordenesPagadas = ordenes.filter(o => o.estado === 'pagado')
 
@@ -253,43 +184,7 @@ export default function CajaPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Caja 💰</h1>
           
-          {/* Indicador de impresora y botones */}
           <div className="flex items-center gap-4">
-            {/* Estado de impresora */}
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm cursor-pointer hover:opacity-80 ${
-              impresoraDisponible 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}
-            onClick={() => setMostrarConfigImpresora(true)}
-            title="Configurar impresora"
-            >
-              <span className="text-lg">🖨️</span>
-              <span>{impresoraDisponible ? 'Impresora lista' : 'Configurar impresora'}</span>
-            </div>
-
-            {/* Botón de reporte de cierre */}
-            {ventasDelDia && (
-              <button
-                onClick={handleImprimirReporte}
-                disabled={imprimiendo === -1}
-                className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                {imprimiendo === -1 ? (
-                  <>
-                    <span className="animate-spin">⏳</span>
-                    Imprimiendo...
-                  </>
-                ) : (
-                  <>
-                    <span>📊</span>
-                    Imprimir Cierre
-                  </>
-                )}
-              </button>
-            )}
-            
-            {/* Navegación entre vistas */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setVistaActual('pendientes')}
@@ -315,7 +210,6 @@ export default function CajaPage() {
           </div>
         </div>
 
-        {/* Resumen de ventas del día */}
         {ventasDelDia && (
           <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">📊 Ventas del Día</h2>
@@ -340,7 +234,6 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Vista de órdenes pendientes */}
         {vistaActual === 'pendientes' && (
           <div className="space-y-6">
             {Object.keys(ordenesPorMesa).length === 0 ? (
@@ -388,15 +281,6 @@ export default function CajaPage() {
                           >
                             {loading ? 'Procesando...' : 'Registrar Pago'}
                           </button>
-                          
-                          {/* Botón de vista previa */}
-                          <button
-                            onClick={() => previewTicket(orden)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-colors"
-                            title="Vista previa del ticket"
-                          >
-                            👁️
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -407,7 +291,6 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Vista de órdenes pagadas */}
         {vistaActual === 'pagadas' && (
           <div className="space-y-4">
             {ordenesPagadas.length === 0 ? (
@@ -440,37 +323,6 @@ export default function CajaPage() {
                           </span>
                         </div>
                       </div>
-                      
-                      {/* Botones de impresión para órdenes pagadas */}
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => handleImprimirTicket(orden)}
-                          disabled={imprimiendo === orden.id}
-                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-2 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1"
-                          title="Imprimir ticket"
-                        >
-                          {imprimiendo === orden.id ? (
-                            <>
-                              <span className="animate-spin text-xs">⏳</span>
-                              <span className="text-xs">Imprimiendo...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>🖨️</span>
-                              <span className="text-xs">Imprimir</span>
-                            </>
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={() => previewTicket(orden)}
-                          className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1"
-                          title="Vista previa"
-                        >
-                          <span>👁️</span>
-                          <span className="text-xs">Preview</span>
-                        </button>
-                      </div>
                     </div>
                   </div>
                   
@@ -488,17 +340,6 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* Modal de configuración de impresora */}
-        {mostrarConfigImpresora && (
-          <PrinterSetup 
-            onClose={() => {
-              setMostrarConfigImpresora(false)
-              verificarImpresora() // Reverificar después de cerrar
-            }} 
-          />
-        )}
-
-        {/* Modal de pago */}
         {ordenSeleccionada && (
           <ModalPago
             orden={ordenSeleccionada}
