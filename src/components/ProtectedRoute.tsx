@@ -1,3 +1,4 @@
+// src/components/ProtectedRoute.tsx
 'use client'
 
 import { useEffect } from 'react'
@@ -22,7 +23,7 @@ export default function ProtectedRoute({ children, allowRoles }: Props) {
     if (!allowRoles.includes(user.rol)) {
       router.push('/login')
     }
-  }, [allowRoles, router]) // 👈 Agregué las dependencias faltantes
+  }, [allowRoles, router]) // <-- Corrección aquí
 
   return <>{children}</>
 }
