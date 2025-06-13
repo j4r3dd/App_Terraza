@@ -30,3 +30,4 @@ En lugar del sistema de autenticación por email de Supabase, se usa:
 - Autenticación persistente mediante `localStorage` (en el cliente)
 
 ---
+Cambio fantasma 
