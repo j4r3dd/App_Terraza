@@ -37,7 +37,6 @@ interface ModalPagoProps {
 
 function ModalPago({ orden, onClose, onConfirm }: ModalPagoProps) {
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<'efectivo' | 'tarjeta'>('efectivo')
-  // ... (el resto del componente modal es idéntico)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -68,7 +67,6 @@ function ModalPago({ orden, onClose, onConfirm }: ModalPagoProps) {
     </div>
   )
 }
-
 
 export default function CajaPage() {
   const [ordenes, setOrdenes] = useState<Orden[]>([])
@@ -102,6 +100,34 @@ export default function CajaPage() {
   useEffect(() => {
     obtenerOrdenes();
     obtenerVentasDelDia();
+    
+    // Auto-refresco cada minuto (60000ms)
+    const intervalId = setInterval(() => {
+      obtenerOrdenes();
+      obtenerVentasDelDia();
+      console.log('🔄 Auto-refresco: Órdenes y ventas de caja actualizadas')
+    }, 60000)
+    
+    // Configurar suscripción en tiempo real para cambios en órdenes
+    const subscription = supabase
+      .channel('ordenes_caja')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'ordenes'
+        }, 
+        () => {
+          obtenerOrdenes();
+          obtenerVentasDelDia();
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(intervalId)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const marcarPagado = async (orden: Orden, metodoPago: 'efectivo' | 'tarjeta') => {
@@ -135,7 +161,6 @@ export default function CajaPage() {
   return (
     <ProtectedRoute allowRoles={["caja"]}>
       <main className="p-6">
-        {/* ... (La parte del header y ventas del día no cambia) ... */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Caja 💰</h1>
           <div className="flex items-center gap-4">
@@ -145,6 +170,7 @@ export default function CajaPage() {
             </div>
           </div>
         </div>
+        
         {ventasDelDia && <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">📊 Ventas del Día</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -170,7 +196,6 @@ export default function CajaPage() {
                         <p className="text-sm text-gray-500">{lista.length} orden(es)</p>
                       </div>
                       
-                      {/* ===== NUEVO BOTÓN DE DESCARGA DE PDF ===== */}
                       {isClient && (
                         <PDFDownloadLink
                           document={<ReceiptPDF bill={{ mesa, ordenes: lista, total: totalMesa(lista) }} />}
@@ -189,7 +214,6 @@ export default function CajaPage() {
 
                     </div>
                   </div>
-                  {/* ... (el resto del renderizado de órdenes pendientes no cambia) ... */}
                   <div className="space-y-3">
                     {lista.map((orden) => (
                       <div key={orden.id} className="bg-gray-50 border rounded-lg p-3">
@@ -212,7 +236,6 @@ export default function CajaPage() {
           </div>
         )}
 
-        {/* ... (La vista de órdenes pagadas no cambia) ... */}
         {vistaActual === 'pagadas' && <div className="space-y-4">
             {ordenesPagadas.length === 0 ? <div className="text-center text-gray-500 py-8"><p className="text-xl">📋 No hay órdenes pagadas hoy</p></div> : ordenesPagadas.map(orden => <div key={orden.id} className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">

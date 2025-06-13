@@ -48,14 +48,12 @@ export default function MeseroPage() {
   const agregarAlPedido = (producto: Producto) => {
     const existente = pedido.find(p => p.id === producto.id)
     if (existente) {
-      // Si ya existe, aumentar cantidad
       setPedido(pedido.map(p => 
         p.id === producto.id 
           ? { ...p, cantidad: p.cantidad + 1 }
           : p
       ))
     } else {
-      // Si no existe, agregarlo
       setPedido([...pedido, { ...producto, cantidad: 1 }])
     }
   }
@@ -64,14 +62,12 @@ export default function MeseroPage() {
   const quitarDelPedido = (id: number) => {
     const existente = pedido.find(p => p.id === id)
     if (existente && existente.cantidad > 1) {
-      // Si tiene más de 1, reducir cantidad
       setPedido(pedido.map(p => 
         p.id === id 
           ? { ...p, cantidad: p.cantidad - 1 }
           : p
       ))
     } else {
-      // Si tiene 1 o menos, eliminarlo
       setPedido(pedido.filter(p => p.id !== id))
     }
   }
@@ -135,170 +131,232 @@ export default function MeseroPage() {
 
   return (
     <ProtectedRoute allowRoles={["mesero"]}>
-      <main className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Panel de Mesero 🧾</h1>
-          <div className="text-lg font-semibold text-blue-600">
-            {mesa ? `${mesa} seleccionada` : "Selecciona una mesa"}
+      <main className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-6">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-green-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-mesero-gradient text-white p-3 rounded-full text-2xl">
+                🧾
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">Panel de Mesero</h1>
+                <p className="text-gray-600">Gestión de pedidos y mesas</p>
+              </div>
+            </div>
+            <div className="text-right">
+              {mesa ? (
+                <div className="bg-mesero-gradient text-white px-4 py-2 rounded-lg font-bold text-lg">
+                  {mesa} ✓
+                </div>
+              ) : (
+                <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-medium border-2 border-yellow-300">
+                  Selecciona una mesa
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Selector de Mesa */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h2 className="text-lg font-semibold mb-3">Seleccionar Mesa</h2>
-          <div className="flex flex-wrap gap-2">
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-green-200">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="text-2xl mr-2">🪑</span>
+            Seleccionar Mesa
+          </h2>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => {
               const m = `Mesa ${i + 1}`
               return (
                 <button
                   key={m}
                   onClick={() => setMesa(m)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`p-4 rounded-xl font-bold text-lg transition-all duration-200 hover-scale ${
                     mesa === m 
-                      ? "bg-blue-600 text-white shadow-md" 
-                      : "bg-white border-2 border-gray-200 hover:border-blue-300"
+                      ? "bg-mesero-gradient text-white shadow-lg scale-105" 
+                      : "bg-gray-100 border-2 border-gray-300 text-gray-700 hover:border-green-400"
                   }`}
                 >
-                  {m}
+                  {i + 1}
                 </button>
               )
             })}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Panel izquierdo: Menú */}
-          <div className="bg-white border rounded-lg p-4">
-            <h2 className="text-xl font-semibold mb-4">Menú del Restaurante</h2>
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-green-200">
+            <div className="p-6 border-b-2 border-green-100">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                <span className="text-2xl mr-2">📋</span>
+                Menú del Restaurante
+              </h2>
+            </div>
             
             {/* Filtros de tipo */}
-            <div className="flex mb-4 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setTipoActivo("comida")}
-                className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                  tipoActivo === "comida"
-                    ? "bg-white shadow-sm text-orange-600"
-                    : "text-gray-600 hover:text-orange-600"
-                }`}
-              >
-                🍽️ Comida ({productosComida.length})
-              </button>
-              <button
-                onClick={() => setTipoActivo("bebida")}
-                className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                  tipoActivo === "bebida"
-                    ? "bg-white shadow-sm text-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
-                }`}
-              >
-                🥤 Bebidas ({productosBebida.length})
-              </button>
+            <div className="p-6 pb-4">
+              <div className="flex bg-gray-100 rounded-xl p-2">
+                <button
+                  onClick={() => setTipoActivo("comida")}
+                  className={`flex-1 py-3 px-4 rounded-lg font-bold text-lg transition-all duration-200 ${
+                    tipoActivo === "comida"
+                      ? "bg-orange-500 text-white shadow-lg transform scale-105"
+                      : "text-gray-600 hover:bg-orange-100 hover:text-orange-600"
+                  }`}
+                >
+                  🍽️ Comida ({productosComida.length})
+                </button>
+                <button
+                  onClick={() => setTipoActivo("bebida")}
+                  className={`flex-1 py-3 px-4 rounded-lg font-bold text-lg transition-all duration-200 ${
+                    tipoActivo === "bebida"
+                      ? "bg-blue-500 text-white shadow-lg transform scale-105"
+                      : "text-gray-600 hover:bg-blue-100 hover:text-blue-600"
+                  }`}
+                >
+                  🥤 Bebidas ({productosBebida.length})
+                </button>
+              </div>
             </div>
 
             {/* Lista de productos */}
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {productosActivos.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <p>No hay {tipoActivo === "comida" ? "platillos" : "bebidas"} disponibles</p>
-                  <p className="text-sm">El admin debe agregar productos al menú</p>
-                </div>
-              ) : (
-                productosActivos.map((producto) => (
-                  <div
-                    key={producto.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-medium">{producto.nombre}</h3>
-                      <p className="text-green-600 font-semibold">${producto.precio.toFixed(2)}</p>
-                    </div>
-                    <button
-                      onClick={() => agregarAlPedido(producto)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-medium transition-colors"
-                    >
-                      Agregar
-                    </button>
+            <div className="px-6 pb-6">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {productosActivos.length === 0 ? (
+                  <div className="text-center text-gray-500 py-12">
+                    <div className="text-6xl mb-4">📦</div>
+                    <p className="text-xl font-medium">No hay {tipoActivo === "comida" ? "platillos" : "bebidas"} disponibles</p>
+                    <p className="text-sm">El admin debe agregar productos al menú</p>
                   </div>
-                ))
-              )}
+                ) : (
+                  productosActivos.map((producto) => (
+                    <div
+                      key={producto.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-gray-200 hover:border-green-300"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg text-gray-800">{producto.nombre}</h3>
+                        <p className="text-green-600 font-bold text-xl">${producto.precio.toFixed(2)}</p>
+                      </div>
+                      <button
+                        onClick={() => agregarAlPedido(producto)}
+                        className="btn-mesero hover-scale"
+                      >
+                        Agregar +
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
           {/* Panel derecho: Pedido actual */}
-          <div className="bg-white border rounded-lg p-4">
-            <h2 className="text-xl font-semibold mb-4">Pedido Actual</h2>
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-green-200">
+            <div className="p-6 border-b-2 border-green-100">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                <span className="text-2xl mr-2">🛒</span>
+                Pedido Actual
+                {pedido.length > 0 && (
+                  <span className="ml-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                    {pedido.length} {pedido.length === 1 ? 'item' : 'items'}
+                  </span>
+                )}
+              </h2>
+            </div>
             
-            {pedido.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <p>El pedido está vacío</p>
-                <p className="text-sm">Agrega productos del menú</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                  {pedido.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.nombre}</h3>
-                        <p className="text-sm text-gray-600">
-                          ${item.precio.toFixed(2)} × {item.cantidad} = ${(item.precio * item.cantidad).toFixed(2)}
-                        </p>
+            <div className="p-6">
+              {pedido.length === 0 ? (
+                <div className="text-center text-gray-500 py-12">
+                  <div className="text-6xl mb-4">🛒</div>
+                  <p className="text-xl font-medium">El pedido está vacío</p>
+                  <p className="text-sm">Agrega productos del menú</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
+                    {pedido.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-4 bg-green-50 rounded-xl border-2 border-green-200"
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gray-800">{item.nombre}</h3>
+                          <p className="text-sm text-gray-600">
+                            ${item.precio.toFixed(2)} × {item.cantidad} = 
+                            <span className="font-bold text-green-600 ml-1">
+                              ${(item.precio * item.cantidad).toFixed(2)}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => quitarDelPedido(item.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white w-10 h-10 rounded-full font-bold text-xl transition-all duration-200 hover:scale-110 shadow-md"
+                          >
+                            −
+                          </button>
+                          <span className="w-8 text-center font-bold text-lg text-gray-800">
+                            {item.cantidad}
+                          </span>
+                          <button
+                            onClick={() => agregarAlPedido(item)}
+                            className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full font-bold text-xl transition-all duration-200 hover:scale-110 shadow-md"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => quitarDelPedido(item.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold transition-colors"
-                        >
-                          −
-                        </button>
-                        <span className="w-8 text-center font-semibold">{item.cantidad}</span>
-                        <button
-                          onClick={() => agregarAlPedido(item)}
-                          className="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full font-bold transition-colors"
-                        >
-                          +
-                        </button>
+                    ))}
+                  </div>
+
+                  {/* Total */}
+                  <div className="border-t-2 border-green-200 pt-6">
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-xl">
+                      <div className="flex justify-between items-center text-2xl font-bold">
+                        <span>Total:</span>
+                        <span>${calcularTotal().toFixed(2)}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Total */}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center text-xl font-bold">
-                    <span>Total:</span>
-                    <span className="text-green-600">${calcularTotal().toFixed(2)}</span>
                   </div>
+                </>
+              )}
+
+              {/* Botón enviar */}
+              <button
+                onClick={enviarPedido}
+                disabled={!mesa || pedido.length === 0}
+                className={`w-full mt-6 py-4 rounded-xl font-bold text-xl transition-all duration-200 ${
+                  mesa && pedido.length > 0
+                    ? "bg-mesero-gradient text-white hover:scale-105 shadow-lg hover:shadow-xl"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {mesa && pedido.length > 0 ? (
+                  <div className="flex items-center justify-center">
+                    <span className="text-2xl mr-2">🚀</span>
+                    Enviar Pedido
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <span className="text-2xl mr-2">⚠️</span>
+                    {!mesa ? "Selecciona una mesa" : "Agrega productos"}
+                  </div>
+                )}
+              </button>
+
+              {/* Mensaje */}
+              {mensaje && (
+                <div className={`mt-4 p-4 rounded-xl text-center font-bold text-lg fade-in ${
+                  mensaje.includes("✅") 
+                    ? "bg-green-100 text-green-800 border-2 border-green-300" 
+                    : "bg-red-100 text-red-800 border-2 border-red-300"
+                }`}>
+                  {mensaje}
                 </div>
-              </>
-            )}
-
-            {/* Botón enviar */}
-            <button
-              onClick={enviarPedido}
-              disabled={!mesa || pedido.length === 0}
-              className={`w-full mt-4 py-3 rounded-lg font-semibold transition-colors ${
-                mesa && pedido.length > 0
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              Enviar Pedido
-            </button>
-
-            {/* Mensaje */}
-            {mensaje && (
-              <div className={`mt-3 p-3 rounded-lg text-center font-medium ${
-                mensaje.includes("✅") 
-                  ? "bg-green-100 text-green-800" 
-                  : "bg-red-100 text-red-800"
-              }`}>
-                {mensaje}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </main>
