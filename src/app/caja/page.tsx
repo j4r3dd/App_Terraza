@@ -1,10 +1,10 @@
 // src/app/caja/page.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+// 1. Importa 'useRef' junto a los otros hooks de React
+import { useEffect, useState, useRef } from "react" 
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "../../../supabase/client"
-// Importamos el componente para generar el link de descarga del PDF
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReceiptPDF from "@/components/ReceiptPDF";
 
@@ -26,6 +26,13 @@ export interface VentasDelDia {
   total_tarjeta: number
   total_general: number
   ordenes_pagadas: number
+}
+
+// 2. Define la interfaz para la cuenta que se va a descargar
+interface MesaBill {
+  mesa: string;
+  ordenes: Orden[];
+  total: number;
 }
 
 // Componente ModalPago (sin cambios)
@@ -74,23 +81,35 @@ export default function CajaPage() {
   const [vistaActual, setVistaActual] = useState<'pendientes' | 'pagadas'>('pendientes')
   const [ordenSeleccionada, setOrdenSeleccionada] = useState<Orden | null>(null)
   const [loading, setLoading] = useState(false)
-  // Estado para asegurar que el link de PDF solo se renderice en el cliente
   const [isClient, setIsClient] = useState(false)
+  
+  // 3. Añade un nuevo estado para manejar la cuenta a descargar en PDF
+  const [billToDownload, setBillToDownload] = useState<MesaBill | null>(null);
+
 
   useEffect(() => {
     setIsClient(true)
   }, [])
 
   const obtenerOrdenes = async () => {
-    const { data } = await supabase.from("ordenes").select("*").order("created_at", { ascending: false })
+    const { data } = await supabase.from("ordenes").select("*").order("created_at", { ascending: false });
     if (data) {
-      const ordenesConTotal = data.map((orden: unknown) => {
-        const ordenTyped = orden as Orden;
-        return { ...ordenTyped, total: ordenTyped.total || ordenTyped.productos.reduce((sum: number, p: { nombre: string; precio: number }) => sum + (p.precio || 0), 0) }
-      });
-      setOrdenes(ordenesConTotal);
+        const ordenesConTotal = data.map((orden: unknown) => {
+            const ordenTyped = orden as Orden;
+            // Verificación para asegurar que 'productos' es un array antes de usar reduce
+            const productosTotal = Array.isArray(ordenTyped.productos)
+              ? ordenTyped.productos.reduce((sum: number, p: { nombre: string; precio: number }) => sum + (p.precio || 0), 0)
+              : 0;
+            
+            return { 
+              ...ordenTyped, 
+              // Usar el total existente o el recién calculado
+              total: ordenTyped.total || productosTotal 
+            };
+        });
+        setOrdenes(ordenesConTotal);
     }
-  }
+  };
 
   const obtenerVentasDelDia = async () => {
     const { data } = await supabase.from("ventas_diarias").select("*").eq("fecha", new Date().toISOString().split('T')[0]).single();
@@ -101,14 +120,12 @@ export default function CajaPage() {
     obtenerOrdenes();
     obtenerVentasDelDia();
     
-    // Auto-refresco cada minuto (60000ms)
     const intervalId = setInterval(() => {
       obtenerOrdenes();
       obtenerVentasDelDia();
       console.log('🔄 Auto-refresco: Órdenes y ventas de caja actualizadas')
     }, 60000)
     
-    // Configurar suscripción en tiempo real para cambios en órdenes
     const subscription = supabase
       .channel('ordenes_caja')
       .on('postgres_changes', 
@@ -161,26 +178,27 @@ export default function CajaPage() {
   return (
     <ProtectedRoute allowRoles={["caja"]}>
       <main className="p-6">
+        {/* ... (código del encabezado y ventas sin cambios) ... */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Caja 💰</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button onClick={() => setVistaActual('pendientes')} className={`px-4 py-2 rounded-md font-medium transition-colors ${vistaActual === 'pendientes' ? 'bg-white shadow-sm text-orange-600' : 'text-gray-600 hover:text-orange-600'}`}>Pendientes ({Object.keys(ordenesPorMesa).length})</button>
-              <button onClick={() => setVistaActual('pagadas')} className={`px-4 py-2 rounded-md font-medium transition-colors ${vistaActual === 'pagadas' ? 'bg-white shadow-sm text-green-600' : 'text-gray-600 hover:text-green-600'}`}>Pagadas ({ordenesPagadas.length})</button>
+            <h1 className="text-3xl font-bold">Caja 💰</h1>
+            <div className="flex items-center gap-4">
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                <button onClick={() => setVistaActual('pendientes')} className={`px-4 py-2 rounded-md font-medium transition-colors ${vistaActual === 'pendientes' ? 'bg-white shadow-sm text-orange-600' : 'text-gray-600 hover:text-orange-600'}`}>Pendientes ({Object.keys(ordenesPorMesa).length})</button>
+                <button onClick={() => setVistaActual('pagadas')} className={`px-4 py-2 rounded-md font-medium transition-colors ${vistaActual === 'pagadas' ? 'bg-white shadow-sm text-green-600' : 'text-gray-600 hover:text-green-600'}`}>Pagadas ({ordenesPagadas.length})</button>
+                </div>
             </div>
-          </div>
         </div>
         
         {ventasDelDia && <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">📊 Ventas del Día</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center"><p className="text-green-100">💵 Efectivo</p><p className="text-2xl font-bold">${ventasDelDia.total_efectivo.toFixed(2)}</p></div>
-              <div className="text-center"><p className="text-blue-100">💳 Tarjeta</p><p className="text-2xl font-bold">${ventasDelDia.total_tarjeta.toFixed(2)}</p></div>
-              <div className="text-center"><p className="text-yellow-100">💰 Total</p><p className="text-2xl font-bold">${ventasDelDia.total_general.toFixed(2)}</p></div>
-              <div className="text-center"><p className="text-purple-100">🧾 Órdenes</p><p className="text-2xl font-bold">{ventasDelDia.ordenes_pagadas}</p></div>
+                <div className="text-center"><p className="text-green-100">💵 Efectivo</p><p className="text-2xl font-bold">${ventasDelDia.total_efectivo.toFixed(2)}</p></div>
+                <div className="text-center"><p className="text-blue-100">💳 Tarjeta</p><p className="text-2xl font-bold">${ventasDelDia.total_tarjeta.toFixed(2)}</p></div>
+                <div className="text-center"><p className="text-yellow-100">💰 Total</p><p className="text-2xl font-bold">${ventasDelDia.total_general.toFixed(2)}</p></div>
+                <div className="text-center"><p className="text-purple-100">🧾 Órdenes</p><p className="text-2xl font-bold">{ventasDelDia.ordenes_pagadas}</p></div>
             </div>
-          </div>}
-
+        </div>}
+        
         {vistaActual === 'pendientes' && (
           <div className="space-y-6">
             {Object.keys(ordenesPorMesa).length === 0 ? (
@@ -196,24 +214,17 @@ export default function CajaPage() {
                         <p className="text-sm text-gray-500">{lista.length} orden(es)</p>
                       </div>
                       
-                      {isClient && (
-                        <PDFDownloadLink
-                          document={<ReceiptPDF bill={{ mesa, ordenes: lista, total: totalMesa(lista) }} />}
-                          fileName={`Mesa_${mesa.replace(/\s+/g, '_')}_cuenta.pdf`}
-                        >
-                          {({ loading }) => (
-                            <button
-                              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                              disabled={loading}
-                            >
-                              {loading ? 'Generando...' : 'Descargar PDF'}
-                            </button>
-                          )}
-                        </PDFDownloadLink>
-                      )}
+                      {/* 4. Cambia el PDFDownloadLink por un botón normal */}
+                      <button
+                        onClick={() => setBillToDownload({ mesa, ordenes: lista, total: totalMesa(lista) })}
+                        className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Descargar PDF
+                      </button>
 
                     </div>
                   </div>
+                  {/* ... (código de las órdenes individuales sin cambios) ... */}
                   <div className="space-y-3">
                     {lista.map((orden) => (
                       <div key={orden.id} className="bg-gray-50 border rounded-lg p-3">
@@ -236,6 +247,7 @@ export default function CajaPage() {
           </div>
         )}
 
+        {/* ... (código de la vista de pagadas sin cambios) ... */}
         {vistaActual === 'pagadas' && <div className="space-y-4">
             {ordenesPagadas.length === 0 ? <div className="text-center text-gray-500 py-8"><p className="text-xl">📋 No hay órdenes pagadas hoy</p></div> : ordenesPagadas.map(orden => <div key={orden.id} className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -257,6 +269,26 @@ export default function CajaPage() {
           </div>}
 
         {ordenSeleccionada && (<ModalPago orden={ordenSeleccionada} onClose={() => setOrdenSeleccionada(null)} onConfirm={(metodoPago) => marcarPagado(ordenSeleccionada, metodoPago)} />)}
+
+        {/* 5. Agrega el modal de descarga de PDF */}
+        {isClient && billToDownload && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-8 rounded-lg shadow-2xl text-center">
+                  <h3 className="text-xl font-bold mb-4">Preparando PDF para {billToDownload.mesa}</h3>
+                  <p className="text-gray-600 mb-6">El archivo se descargará automáticamente. Si no, usa el botón.</p>
+                  <PDFDownloadLink
+                      document={<ReceiptPDF bill={billToDownload} />}
+                      fileName={`Mesa_${billToDownload.mesa.replace(/\s+/g, '_')}_cuenta.pdf`}
+                      className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors"
+                  >
+                      {({ loading }) => (loading ? 'Generando...' : 'Descargar Ahora')}
+                  </PDFDownloadLink>
+                  <button onClick={() => setBillToDownload(null)} className="mt-4 block w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg">
+                      Cerrar
+                  </button>
+              </div>
+          </div>
+        )}
       </main>
     </ProtectedRoute>
   )
