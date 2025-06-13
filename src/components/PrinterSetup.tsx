@@ -33,6 +33,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
     } catch (error) {
       setEstado('error')
       setMensaje('Error al verificar impresoras')
+      console.error(error)
     }
   }
 
@@ -161,7 +162,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
             <div className="flex items-start gap-3">
               <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
               <div>
-                <p className="font-medium">Haz clic en "Conectar Impresora"</p>
+                <p className="font-medium">Haz clic en &quot;Conectar Impresora&quot;</p>
                 <p className="text-sm text-gray-600">Selecciona tu impresora en el diálogo que aparece</p>
               </div>
             </div>
@@ -170,7 +171,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
               <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
               <div>
                 <p className="font-medium">Prueba la impresión</p>
-                <p className="text-sm text-gray-600">Usa el botón "Probar Impresora" para verificar</p>
+                <p className="text-sm text-gray-600">Usa el botón &quot;Probar Impresora&quot; para verificar</p>
               </div>
             </div>
           </div>
