@@ -2,12 +2,11 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { 
-  detectarImpresoras, 
-  solicitarAccesoImpresora, 
+import {
+  detectarImpresoras,
+  solicitarAccesoImpresora,
   solicitarAccesoImpresoraConFiltros,
   probarConexionImpresora,
-  COMMANDS 
 } from '../utils/thermalPrinter'
 
 interface PrinterSetupProps {
@@ -48,17 +47,17 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
     setMensaje('Abriendo diálogo de selección de dispositivo...')
 
     try {
-      const port = usarFiltros ? 
-        await solicitarAccesoImpresoraConFiltros() : 
+      const port = usarFiltros ?
+        await solicitarAccesoImpresoraConFiltros() :
         await solicitarAccesoImpresora()
-      
+
       setPuerto(port)
       setEstado('connected')
       setMensaje('¡Impresora conectada! Ya puedes imprimir tickets.')
-      
+
     } catch (error: unknown) {
       setEstado('error')
-      
+
       if (error && typeof error === 'object' && 'name' in error) {
         if (error.name === 'NotFoundError') {
           setMensaje('❌ No se seleccionó ningún dispositivo. Inténtalo de nuevo y selecciona tu impresora.')
@@ -67,7 +66,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
         } else {
           const message = 'message' in error ? error.message as string : 'Error desconocido'
           if (message.includes('No se encontraron dispositivos')) {
-            setMensaje('❌ No se encontraron dispositivos compatibles. Usa "Conectar Cualquier Dispositivo".')
+            setMensaje('❌ No se encontraron dispositivos compatibles. Usa &quot;Conectar Cualquier Dispositivo&quot;.')
           } else {
             setMensaje(`❌ Error: ${message}`)
           }
@@ -75,7 +74,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
       } else {
         setMensaje('❌ Error desconocido al conectar impresora')
       }
-      
+
       console.error('Error de conexión:', error)
     }
   }
@@ -86,7 +85,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
       try {
         await conectarImpresora()
         return
-      } catch (error) {
+      } catch {
         setMensaje('❌ Primero conecta una impresora')
         return
       }
@@ -98,8 +97,8 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
       await probarConexionImpresora()
       setMensaje('✅ ¡Prueba enviada! Verifica que haya salido el papel.')
     } catch (error: unknown) {
-      const errorMessage = error && typeof error === 'object' && 'message' in error 
-        ? error.message as string 
+      const errorMessage = error && typeof error === 'object' && 'message' in error
+        ? error.message as string
         : 'Error desconocido'
       setMensaje(`❌ Error en prueba: ${errorMessage}`)
       console.error('Error en prueba:', error)
@@ -170,7 +169,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
               <div className="flex items-start gap-3">
                 <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">3</span>
                 <div>
-                  <p className="font-medium">Haz clic en "Buscar Impresoras"</p>
+                  <p className="font-medium">Haz clic en &quot;Buscar Impresoras&quot;</p>
                   <p className="text-gray-600">Se abrirá un diálogo para seleccionar el dispositivo</p>
                 </div>
               </div>
@@ -179,7 +178,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
                 <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">4</span>
                 <div>
                   <p className="font-medium">Selecciona tu impresora</p>
-                  <p className="text-gray-600">Aparecerá como "USB Serial Device" o similar</p>
+                  <p className="text-gray-600">Aparecerá como &quot;USB Serial Device&quot; o similar</p>
                 </div>
               </div>
             </div>
@@ -192,8 +191,8 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
             <h3 className="font-bold text-amber-800 mb-3">⚠️ ¿No aparece tu impresora?</h3>
             <div className="space-y-2 text-sm text-amber-700">
               <p>• La impresora debe estar <strong>encendida y conectada por USB</strong></p>
-              <p>• Algunos dispositivos aparecen como "USB Serial Device" en lugar del nombre de la marca</p>
-              <p>• Si no aparece nada, prueba el botón "Conectar Cualquier Dispositivo"</p>
+              <p>• Algunos dispositivos aparecen como &quot;USB Serial Device&quot; en lugar del nombre de la marca</p>
+              <p>• Si no aparece nada, prueba el botón &quot;Conectar Cualquier Dispositivo&quot;</p>
               <p>• Verifica que sea una impresora térmica ESC/POS de 58mm</p>
             </div>
           </div>
@@ -330,13 +329,13 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
               
               {/* Problema: No aparecen dispositivos */}
               <div className="bg-red-50 border border-red-200 rounded p-3">
-                <p className="font-semibold text-red-800">❌ "No se encontraron dispositivos compatibles"</p>
+                <p className="font-semibold text-red-800">❌ &quot;No se encontraron dispositivos compatibles&quot;</p>
                 <ul className="mt-2 space-y-1 text-red-700">
                   <li>• Verifica que la impresora esté encendida y conectada por USB</li>
                   <li>• Prueba conectar en otro puerto USB</li>
-                  <li>• Usa el botón "Conectar Cualquier Dispositivo"</li>
+                  <li>• Usa el botón &quot;Conectar Cualquier Dispositivo&quot;</li>
                   <li>• Reinicia el navegador e intenta de nuevo</li>
-                  <li>• En Windows, verifica que aparezca en "Administrador de dispositivos"</li>
+                  <li>• En Windows, verifica que aparezca en &quot;Administrador de dispositivos&quot;</li>
                 </ul>
               </div>
 
@@ -400,7 +399,7 @@ export default function PrinterSetup({ onClose }: PrinterSetupProps) {
               <div>Estado: {estado}</div>
               <div>Puerto: {puerto ? 'Conectado' : 'No conectado'}</div>
               <div>Web Serial API: {('serial' in navigator) ? 'Disponible' : 'No disponible'}</div>
-              <div>User Agent: {navigator.userAgent.substring(0, 100)}...</div>
+              <div>User Agent: {typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'N/A'}...</div>
             </div>
           </details>
         </div>
