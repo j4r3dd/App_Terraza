@@ -26,6 +26,7 @@ export default function MeseroPage() {
   const [pedido, setPedido] = useState<ProductoEnPedido[]>([])
   const [mensaje, setMensaje] = useState("")
   const [tipoActivo, setTipoActivo] = useState<"comida" | "bebida">("comida")
+  const [busqueda, setBusqueda] = useState("")
 
   const usuarioRaw = typeof window !== "undefined" ? localStorage.getItem("usuario") : null
   const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null
@@ -56,6 +57,9 @@ export default function MeseroPage() {
     } else {
       setPedido([...pedido, { ...producto, cantidad: 1 }])
     }
+    
+    // Limpiar búsqueda después de agregar
+    setBusqueda("")
   }
 
   // Quitar producto del pedido
@@ -116,6 +120,7 @@ export default function MeseroPage() {
       // Limpiar formulario
       setPedido([])
       setMesa(null)
+      setBusqueda("")
       setMensaje("✅ Pedido enviado correctamente")
       
       // Limpiar mensaje después de 3 segundos
@@ -127,7 +132,34 @@ export default function MeseroPage() {
     }
   }
 
+  // Filtrar productos por búsqueda
+  const filtrarProductos = (productos: Producto[]) => {
+    if (!busqueda.trim()) return productos
+    
+    return productos.filter(producto => 
+      producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
+    )
+  }
+
+  // Obtener productos filtrados
   const productosActivos = tipoActivo === "comida" ? productosComida : productosBebida
+  const productosFiltrados = filtrarProductos(productosActivos)
+
+  // Función para resaltar texto de búsqueda
+  const resaltarTexto = (texto: string, busqueda: string) => {
+    if (!busqueda.trim()) return texto
+    
+    const regex = new RegExp(`(${busqueda})`, 'gi')
+    const partes = texto.split(regex)
+    
+    return partes.map((parte, index) => 
+      regex.test(parte) ? (
+        <span key={index} className="bg-yellow-200 font-bold">{parte}</span>
+      ) : (
+        parte
+      )
+    )
+  }
 
   return (
     <ProtectedRoute allowRoles={["mesero"]}>
@@ -196,7 +228,7 @@ export default function MeseroPage() {
             
             {/* Filtros de tipo */}
             <div className="p-6 pb-4">
-              <div className="flex bg-gray-100 rounded-xl p-2">
+              <div className="flex bg-gray-100 rounded-xl p-2 mb-4">
                 <button
                   onClick={() => setTipoActivo("comida")}
                   className={`flex-1 py-3 px-4 rounded-lg font-bold text-lg transition-all duration-200 ${
@@ -218,25 +250,75 @@ export default function MeseroPage() {
                   🥤 Bebidas ({productosBebida.length})
                 </button>
               </div>
+
+              {/* Barra de búsqueda */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-400 text-xl">🔍</span>
+                </div>
+                <input
+                  type="text"
+                  placeholder={`Buscar ${tipoActivo === "comida" ? "platillos" : "bebidas"}...`}
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors duration-200 text-lg"
+                />
+                {busqueda && (
+                  <button
+                    onClick={() => setBusqueda("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    <span className="text-xl">❌</span>
+                  </button>
+                )}
+              </div>
+              
+              {/* Indicador de resultados de búsqueda */}
+              {busqueda && (
+                <div className="mt-2 text-sm text-gray-600">
+                  {productosFiltrados.length} resultado{productosFiltrados.length !== 1 ? 's' : ''} 
+                  {productosFiltrados.length > 0 ? ' encontrado' : ''}{productosFiltrados.length > 1 ? 's' : ''}
+                  {busqueda && ` para "${busqueda}"`}
+                </div>
+              )}
             </div>
 
             {/* Lista de productos */}
             <div className="px-6 pb-6">
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {productosActivos.length === 0 ? (
+                {productosFiltrados.length === 0 ? (
                   <div className="text-center text-gray-500 py-12">
-                    <div className="text-6xl mb-4">📦</div>
-                    <p className="text-xl font-medium">No hay {tipoActivo === "comida" ? "platillos" : "bebidas"} disponibles</p>
-                    <p className="text-sm">El admin debe agregar productos al menú</p>
+                    <div className="text-6xl mb-4">
+                      {busqueda ? "🔍" : "📦"}
+                    </div>
+                    {busqueda ? (
+                      <>
+                        <p className="text-xl font-medium">No se encontraron resultados</p>
+                        <p className="text-sm">Intenta con otro término de búsqueda</p>
+                        <button
+                          onClick={() => setBusqueda("")}
+                          className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Limpiar búsqueda
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xl font-medium">No hay {tipoActivo === "comida" ? "platillos" : "bebidas"} disponibles</p>
+                        <p className="text-sm">El admin debe agregar productos al menú</p>
+                      </>
+                    )}
                   </div>
                 ) : (
-                  productosActivos.map((producto) => (
+                  productosFiltrados.map((producto) => (
                     <div
                       key={producto.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-gray-200 hover:border-green-300"
                     >
                       <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gray-800">{producto.nombre}</h3>
+                        <h3 className="font-bold text-lg text-gray-800">
+                          {resaltarTexto(producto.nombre, busqueda)}
+                        </h3>
                         <p className="text-green-600 font-bold text-xl">${producto.precio.toFixed(2)}</p>
                       </div>
                       <button
