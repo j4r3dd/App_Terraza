@@ -6,11 +6,9 @@ export default function Home() {
   const router = useRouter()
 
   const handleMenuClick = () => {
-    // Opción 1: Abrir imagen directamente (descomenta la línea de abajo)
-    // window.open('/menu.png', '_blank')
-    
-    // Opción 2: Ir a la página del menú (recomendado)
-    router.push('/menu')
+    // Redirigir directamente a la imagen menuu.png que está en la carpeta public/
+    const menuImagePath = '/menuu.png' // Esta ruta apunta a public/menuu.png
+    window.open(menuImagePath, '_blank')
   }
 
   const handleEquipoClick = () => {
