@@ -27,6 +27,7 @@ export default function MeseroPage() {
   const [mensaje, setMensaje] = useState("")
   const [tipoActivo, setTipoActivo] = useState<"comida" | "bebida">("comida")
   const [busqueda, setBusqueda] = useState("")
+  const [pedidoConfirmado, setPedidoConfirmado] = useState(false) // Nuevo estado para confirmación
 
   const usuarioRaw = typeof window !== "undefined" ? localStorage.getItem("usuario") : null
   const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null
@@ -44,6 +45,11 @@ export default function MeseroPage() {
   useEffect(() => {
     cargarProductos()
   }, [])
+
+  // Reiniciar confirmación cuando cambia el pedido
+  useEffect(() => {
+    setPedidoConfirmado(false)
+  }, [pedido, mesa])
 
   // Agregar producto al pedido
   const agregarAlPedido = (producto: Producto) => {
@@ -81,10 +87,19 @@ export default function MeseroPage() {
     return pedido.reduce((total, p) => total + (p.precio * p.cantidad), 0)
   }
 
-  // Enviar pedido
+  // Confirmar pedido con la mesa
+  const confirmarPedido = () => {
+    setPedidoConfirmado(true)
+    setMensaje("✅ Pedido confirmado con la mesa. Ahora puedes enviarlo.")
+    
+    // Limpiar mensaje después de 3 segundos
+    setTimeout(() => setMensaje(""), 3000)
+  }
+
+  // Enviar pedido (solo después de confirmación)
   const enviarPedido = async () => {
-    if (!mesa || pedido.length === 0) {
-      setMensaje("❌ Selecciona mesa y agrega productos")
+    if (!mesa || pedido.length === 0 || !pedidoConfirmado) {
+      setMensaje("❌ Confirma primero el pedido con la mesa")
       return
     }
 
@@ -121,6 +136,7 @@ export default function MeseroPage() {
       setPedido([])
       setMesa(null)
       setBusqueda("")
+      setPedidoConfirmado(false)
       setMensaje("✅ Pedido enviado correctamente")
       
       // Limpiar mensaje después de 3 segundos
@@ -402,23 +418,41 @@ export default function MeseroPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Indicador de estado de confirmación */}
+                  {pedidoConfirmado && (
+                    <div className="mt-4 bg-blue-100 border-2 border-blue-300 text-blue-800 p-3 rounded-xl text-center font-medium">
+                      ✅ Pedido confirmado con la mesa
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* Botón enviar */}
+              {/* Botón de acción (confirmación o envío) */}
               <button
-                onClick={enviarPedido}
+                onClick={pedidoConfirmado ? enviarPedido : confirmarPedido}
                 disabled={!mesa || pedido.length === 0}
                 className={`w-full mt-6 py-4 rounded-xl font-bold text-xl transition-all duration-200 ${
                   mesa && pedido.length > 0
-                    ? "bg-mesero-gradient text-white hover:scale-105 shadow-lg hover:shadow-xl"
+                    ? pedidoConfirmado
+                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:scale-105 shadow-lg hover:shadow-xl"
+                      : "bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:scale-105 shadow-lg hover:shadow-xl"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
                 {mesa && pedido.length > 0 ? (
                   <div className="flex items-center justify-center">
-                    <span className="text-2xl mr-2">🚀</span>
-                    Enviar Pedido
+                    {pedidoConfirmado ? (
+                      <>
+                        <span className="text-2xl mr-2">🚀</span>
+                        Enviar Pedido
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-2xl mr-2">✋</span>
+                        Confirmar con la Mesa
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center">
