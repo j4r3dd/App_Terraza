@@ -49,6 +49,13 @@ interface ModalPagoProps {
   onConfirm: (metodoPago: 'efectivo' | 'tarjeta') => void
 }
 
+interface OrdenWithMesero extends Orden {
+  usuarios?:{
+    id: number;
+    username: string;
+  } | null;
+}
+
 function ModalPago({ mesaAgrupada, onClose, onConfirm }: ModalPagoProps) {
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<'efectivo' | 'tarjeta'>('efectivo')
   
@@ -165,7 +172,7 @@ export default function CajaPage() {
       .order("created_at", { ascending: false });
       
     if (data) {
-      const ordenesConTotal = data.map((orden: any) => {
+      const ordenesConTotal = data.map((orden: OrdenWithMesero) => {
         const productosTotal = Array.isArray(orden.productos)
           ? orden.productos.reduce((sum: number, p: { nombre: string; precio: number }) => sum + (p.precio || 0), 0)
           : 0;
