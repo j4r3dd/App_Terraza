@@ -102,7 +102,7 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ bill }) => {
         <Document>
             <Page style={styles.page}>
                 <Text style={styles.title}>Terraza Madero</Text>
-                <Text style={styles.subtitle}>PRE-CUENTA</Text>
+                <Text style={styles.subtitle}>CUENTA</Text>
                 
                 <View style={styles.line} />
                 <Text style={styles.text}>Mesa: {bill.mesa}</Text>
@@ -127,7 +127,7 @@ const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ bill }) => {
                 <View style={styles.line} />
                 <Text style={styles.total}>TOTAL: ${bill.total.toFixed(2)}</Text>
                 
-                <Text style={styles.footer}>Por favor, revise su cuenta.</Text>
+                <Text style={styles.footer}>PROPINA NO INCLUIDA.</Text>
             </Page>
         </Document>
     );
