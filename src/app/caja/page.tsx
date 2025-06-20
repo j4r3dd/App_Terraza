@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react" 
 import ProtectedRoute from "@/components/ProtectedRoute"
+import TrasladoCuenta from "@/components/TrasladoCuenta"
 import { supabase } from "../../../supabase/client"
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReceiptPDF from "@/components/ReceiptPDF";
@@ -35,8 +36,10 @@ interface MesaBill {
   total: number;
 }
 
+// NUEVA INTERFACE CON TIPO DE UBICACIÓN
 interface MesaAgrupada {
   mesa: string;
+  tipo: 'mesa' | 'barra';  // 🔧 NUEVO CAMPO
   ordenes: Orden[];
   total: number;
   hasUnpaidOrders: boolean;
@@ -69,11 +72,19 @@ function ModalPago({ mesaAgrupada, onClose, onConfirm }: ModalPagoProps) {
       acc[mesero].total += orden.total || 0;
       return acc;
     }, {});
+
+  // 🔧 FUNCIÓN PARA OBTENER EMOJI SEGÚN TIPO
+  const obtenerEmoji = () => {
+    return mesaAgrupada.tipo === 'mesa' ? '🪑' : '🍺';
+  };
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-        <h3 className="text-xl font-bold mb-4">Registrar Pago de Mesa Completa</h3>
+        <h3 className="text-xl font-bold mb-4 flex items-center">
+          <span className="text-2xl mr-2">{obtenerEmoji()}</span>
+          Registrar Pago de {mesaAgrupada.tipo === 'mesa' ? 'Mesa' : 'Barra'} Completa
+        </h3>
         
         {/* Resumen por mesero */}
         <div className="mb-4 bg-gray-50 rounded-lg p-3">
@@ -89,7 +100,10 @@ function ModalPago({ mesaAgrupada, onClose, onConfirm }: ModalPagoProps) {
         </div>
         
         <div className="mb-4">
-          <p className="text-gray-600">Mesa: <span className="font-semibold">{mesaAgrupada.mesa}</span></p>
+          <p className="text-gray-600">
+            {mesaAgrupada.tipo === 'mesa' ? 'Mesa' : 'Barra'}: 
+            <span className="font-semibold ml-1">{mesaAgrupada.mesa}</span>
+          </p>
           <p className="text-gray-600">Órdenes pendientes: <span className="font-semibold">{mesaAgrupada.ordenes.filter(o => o.estado !== 'pagado').length}</span></p>
           <p className="text-2xl font-bold text-green-600 mt-2">Total: ${mesaAgrupada.total.toFixed(2)}</p>
         </div>
@@ -153,6 +167,9 @@ export default function CajaPage() {
   const [loading, setLoading] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [billToDownload, setBillToDownload] = useState<MesaBill | null>(null);
+  
+  // 🔧 NUEVO ESTADO PARA TRASLADO
+  const [mostrarTraslado, setMostrarTraslado] = useState(false);
 
   useEffect(() => {
     setIsClient(true)
@@ -261,17 +278,47 @@ export default function CajaPage() {
     }
   }
 
-  // Crear lista fija de mesas (Mesa 1 a Mesa 12)
-  const mesasFijas = Array.from({ length: 12 }, (_, i) => `Mesa ${i + 1}`);
+  // 🔧 FUNCIÓN PARA DETERMINAR TIPO DE UBICACIÓN
+  const obtenerTipoUbicacion = (ubicacion: string): 'mesa' | 'barra' => {
+    return ubicacion.toLowerCase().includes('barra') ? 'barra' : 'mesa';
+  };
 
-  // Agrupar órdenes por mesa manteniendo el orden fijo
-  const mesasAgrupadas: MesaAgrupada[] = mesasFijas.map(mesaNombre => {
-    const ordenesMesa = ordenes.filter(o => o.mesa === mesaNombre);
+  // 🔧 FUNCIÓN PARA OBTENER EMOJI SEGÚN TIPO
+  const obtenerEmoji = (tipo: 'mesa' | 'barra') => {
+    return tipo === 'mesa' ? '🪑' : '🍺';
+  };
+
+  // 🔧 FUNCIÓN PARA OBTENER ESTILO SEGÚN TIPO
+  const obtenerEstilo = (tipo: 'mesa' | 'barra', hasUnpaidOrders: boolean) => {
+    if (!hasUnpaidOrders) {
+      return 'bg-gray-50 border-2 border-gray-200 opacity-60';
+    }
+    
+    if (tipo === 'barra') {
+      return 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 shadow-md';
+    }
+    
+    return 'bg-white border-2 border-green-200 shadow-md';
+  };
+
+  // 🔧 CREAR LISTA EXPANDIDA DE UBICACIONES (MESAS + BARRA)
+  const todasLasUbicaciones = [
+    // Mesas 1-12
+    ...Array.from({ length: 12 }, (_, i) => `Mesa ${i + 1}`),
+    // Barra 1-8
+    ...Array.from({ length: 8 }, (_, i) => `Barra ${i + 1}`)
+  ];
+
+  // 🔧 AGRUPAR ÓRDENES POR UBICACIÓN CON INFORMACIÓN DE TIPO
+  const mesasAgrupadas: MesaAgrupada[] = todasLasUbicaciones.map(ubicacionNombre => {
+    const ordenesMesa = ordenes.filter(o => o.mesa === ubicacionNombre);
     const ordenesPendientes = ordenesMesa.filter(o => o.estado !== 'pagado');
     const total = ordenesPendientes.reduce((sum, ord) => sum + (ord.total || 0), 0);
+    const tipo = obtenerTipoUbicacion(ubicacionNombre);
     
     return {
-      mesa: mesaNombre,
+      mesa: ubicacionNombre,
+      tipo,
       ordenes: ordenesMesa,
       total,
       hasUnpaidOrders: ordenesPendientes.length > 0
@@ -282,6 +329,19 @@ export default function CajaPage() {
   const mesasConPendientes = mesasAgrupadas.filter(m => m.hasUnpaidOrders);
   const ordenesPagadas = ordenes.filter(o => o.estado === 'pagado');
 
+  // 🔧 SEPARAR MESAS Y BARRA PARA MEJOR ORGANIZACIÓN
+  const mesasConPendientesSeparadas = {
+    mesas: mesasConPendientes.filter(m => m.tipo === 'mesa'),
+    barra: mesasConPendientes.filter(m => m.tipo === 'barra')
+  };
+
+  // 🔧 FUNCIÓN PARA RECARGAR DESPUÉS DE TRASLADO
+  const handleTrasladoCompleto = () => {
+    obtenerOrdenes();
+    obtenerVentasDelDia();
+    setMostrarTraslado(false);
+  };
+
   return (
     <ProtectedRoute allowRoles={["caja"]}>
       <main className="p-6">
@@ -289,6 +349,15 @@ export default function CajaPage() {
         <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold">Caja 💰</h1>
             <div className="flex items-center gap-4">
+                {/* 🔧 BOTÓN DE TRASLADO */}
+                <button
+                  onClick={() => setMostrarTraslado(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-md hover:shadow-lg"
+                >
+                  <span className="text-xl">🔄</span>
+                  Trasladar Cuenta
+                </button>
+                
                 <div className="flex bg-gray-100 rounded-lg p-1">
                 <button 
                   onClick={() => setVistaActual('pendientes')} 
@@ -298,7 +367,7 @@ export default function CajaPage() {
                       : 'text-gray-600 hover:text-orange-600'
                   }`}
                 >
-                  Mesas Pendientes ({mesasConPendientes.length})
+                  Ubicaciones Pendientes ({mesasConPendientes.length})
                 </button>
                 <button 
                   onClick={() => setVistaActual('pagadas')} 
@@ -339,29 +408,34 @@ export default function CajaPage() {
           </div>
         )}
         
-        {/* Vista de Mesas Pendientes */}
+        {/* Vista de Ubicaciones Pendientes */}
         {vistaActual === 'pendientes' && (
-          <div className="space-y-6">
-            {/* Grid de mesas en orden fijo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mesasAgrupadas.map((mesaAgrupada) => (
-                <div 
-                  key={mesaAgrupada.mesa} 
-                  className={`rounded-lg p-4 transition-all duration-200 ${
-                    mesaAgrupada.hasUnpaidOrders 
-                      ? 'bg-white border-2 border-orange-200 shadow-md' 
-                      : 'bg-gray-50 border-2 border-gray-200 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className={`text-xl font-bold ${
-                      mesaAgrupada.hasUnpaidOrders ? 'text-orange-600' : 'text-gray-400'
-                    }`}>
-                      {mesaAgrupada.mesa}
-                    </h2>
-                    
-                    {mesaAgrupada.hasUnpaidOrders ? (
-                      <div className="flex items-center gap-3">
+          <div className="space-y-8">
+            {/* 🔧 SECCIÓN DE MESAS */}
+            {mesasConPendientesSeparadas.mesas.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-green-600 flex items-center">
+                    <span className="text-3xl mr-2">🪑</span>
+                    Mesas con Cuentas Pendientes
+                  </h2>
+                  <div className="text-sm text-gray-600">
+                    {mesasConPendientesSeparadas.mesas.length} mesa{mesasConPendientesSeparadas.mesas.length !== 1 ? 's' : ''} activa{mesasConPendientesSeparadas.mesas.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {mesasConPendientesSeparadas.mesas.map((mesaAgrupada) => (
+                    <div 
+                      key={mesaAgrupada.mesa} 
+                      className={`rounded-lg p-4 transition-all duration-200 ${obtenerEstilo(mesaAgrupada.tipo, mesaAgrupada.hasUnpaidOrders)}`}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-green-600 flex items-center">
+                          <span className="text-2xl mr-2">{obtenerEmoji(mesaAgrupada.tipo)}</span>
+                          {mesaAgrupada.mesa}
+                        </h3>
+                        
                         <div className="text-right">
                           <p className="text-2xl font-bold text-green-600">
                             ${mesaAgrupada.total.toFixed(2)}
@@ -371,15 +445,7 @@ export default function CajaPage() {
                           </p>
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-gray-400 text-sm">
-                        Sin órdenes
-                      </div>
-                    )}
-                  </div>
 
-                  {mesaAgrupada.hasUnpaidOrders && (
-                    <>
                       {/* Mostrar órdenes agrupadas por mesero */}
                       <div className="mb-4">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Órdenes por mesero:</h4>
@@ -439,17 +505,94 @@ export default function CajaPage() {
                           {loading ? 'Procesando...' : '💰 Pagar Mesa'}
                         </button>
                       </div>
-                    </>
-                  )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
+            {/* 🔧 SECCIÓN DE BARRA */}
+            {mesasConPendientesSeparadas.barra.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-amber-600 flex items-center">
+                    <span className="text-3xl mr-2">🍺</span>
+                    Barra con Cuentas Pendientes
+                  </h2>
+                  <div className="text-sm text-gray-600">
+                    {mesasConPendientesSeparadas.barra.length} posición{mesasConPendientesSeparadas.barra.length !== 1 ? 'es' : ''} activa{mesasConPendientesSeparadas.barra.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {mesasConPendientesSeparadas.barra.map((mesaAgrupada) => (
+                    <div 
+                      key={mesaAgrupada.mesa} 
+                      className={`rounded-lg p-4 transition-all duration-200 ${obtenerEstilo(mesaAgrupada.tipo, mesaAgrupada.hasUnpaidOrders)}`}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-amber-600 flex items-center">
+                          <span className="text-2xl mr-2">{obtenerEmoji(mesaAgrupada.tipo)}</span>
+                          {mesaAgrupada.mesa.replace('Barra ', '')}
+                        </h3>
+                        
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-green-600">
+                            ${mesaAgrupada.total.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {mesaAgrupada.ordenes.filter(o => o.estado !== 'pagado').length} orden(es)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Versión compacta para barra */}
+                      <div className="mb-4">
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {mesaAgrupada.ordenes
+                            .filter(o => o.estado !== 'pagado')
+                            .flatMap(orden => orden.productos)
+                            .map((producto, i) => (
+                              <div key={i} className="flex justify-between text-xs bg-white p-1 rounded border-l-2 border-amber-400">
+                                <span className="text-gray-800">{producto.nombre}</span>
+                                <span className="text-green-600 font-medium">${producto.precio.toFixed(2)}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Botones de acción */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setBillToDownload({ 
+                            mesa: mesaAgrupada.mesa, 
+                            ordenes: mesaAgrupada.ordenes.filter(o => o.estado !== 'pagado'), 
+                            total: mesaAgrupada.total 
+                          })}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-2 rounded-lg font-medium transition-colors text-xs"
+                        >
+                          📄
+                        </button>
+                        <button
+                          onClick={() => setMesaSeleccionada(mesaAgrupada)}
+                          disabled={loading}
+                          className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white py-2 px-2 rounded-lg font-medium transition-colors text-xs"
+                        >
+                          {loading ? '⏳' : '💰'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mensaje cuando no hay cuentas pendientes */}
             {mesasConPendientes.length === 0 && (
               <div className="text-center text-gray-500 py-12 bg-gray-50 rounded-lg">
                 <div className="text-6xl mb-4">🎉</div>
-                <p className="text-xl font-medium">¡Todas las mesas están al día!</p>
-                <p className="text-sm">No hay cuentas pendientes</p>
+                <p className="text-xl font-medium">¡Todas las ubicaciones están al día!</p>
+                <p className="text-sm">No hay cuentas pendientes en mesas ni barra</p>
               </div>
             )}
           </div>
@@ -467,7 +610,10 @@ export default function CajaPage() {
                 <div key={orden.id} className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h3 className="font-bold text-green-700">{orden.mesa} - Orden #{orden.id}</h3>
+                      <h3 className="font-bold text-green-700 flex items-center">
+                        <span className="text-xl mr-2">{obtenerEmoji(obtenerTipoUbicacion(orden.mesa))}</span>
+                        {orden.mesa} - Orden #{orden.id}
+                      </h3>
                       {/* Mostrar mesero que tomó la orden */}
                       <p className="text-sm text-blue-600 font-medium">
                         👤 Mesero: {orden.mesero_nombre || 'Sin asignar'}
@@ -508,6 +654,13 @@ export default function CajaPage() {
             onConfirm={(metodoPago) => marcarMesaPagada(mesaSeleccionada, metodoPago)} 
           />
         )}
+
+        {/* 🔧 MODAL DE TRASLADO */}
+        <TrasladoCuenta 
+          isOpen={mostrarTraslado}
+          onClose={() => setMostrarTraslado(false)}
+          onTrasladoCompleto={handleTrasladoCompleto}
+        />
 
         {/* Modal de descarga de PDF */}
         {isClient && billToDownload && (
