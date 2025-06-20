@@ -3,11 +3,29 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase/client'
 
+// 🔧 INTERFACES ESPECÍFICAS PARA ESTE COMPONENTE
+interface ProductoOrden {
+  nombre: string
+  precio: number
+}
+
+interface OrdenBasica {
+  mesa: string
+  productos: ProductoOrden[]
+  total?: number
+}
+
 interface UbicacionConCuentas {
   ubicacion: string
   tipo: 'mesa' | 'barra'
   ordenesPendientes: number
   totalPendiente: number
+}
+
+interface UbicacionDestino {
+  ubicacion: string
+  tipo: 'mesa' | 'barra'
+  disponible: boolean
 }
 
 interface TrasladoCuentaProps {
@@ -32,8 +50,8 @@ export default function TrasladoCuenta({ isOpen, onClose, onTrasladoCompleto }: 
         .neq('estado', 'pagado')
 
       if (ordenes) {
-        // Agrupar por ubicación
-        const agrupadas = ordenes.reduce((acc: Record<string, { ordenes: number; total: number }>, orden) => {
+        // 🔧 TIPAR CORRECTAMENTE LA REDUCCIÓN
+        const agrupadas = (ordenes as OrdenBasica[]).reduce((acc: Record<string, { ordenes: number; total: number }>, orden) => {
           const ubicacion = orden.mesa
           if (!acc[ubicacion]) {
             acc[ubicacion] = { ordenes: 0, total: 0 }
@@ -43,7 +61,7 @@ export default function TrasladoCuenta({ isOpen, onClose, onTrasladoCompleto }: 
           // Calcular total de la orden
           const totalOrden = orden.total || (
             Array.isArray(orden.productos) 
-              ? orden.productos.reduce((sum: number, p: any) => sum + (p.precio || 0), 0)
+              ? orden.productos.reduce((sum: number, p: ProductoOrden) => sum + (p.precio || 0), 0)
               : 0
           )
           acc[ubicacion].total += totalOrden
@@ -51,7 +69,7 @@ export default function TrasladoCuenta({ isOpen, onClose, onTrasladoCompleto }: 
         }, {})
 
         // Convertir a array con tipo de ubicación
-        const ubicacionesArray = Object.entries(agrupadas).map(([ubicacion, datos]) => ({
+        const ubicacionesArray: UbicacionConCuentas[] = Object.entries(agrupadas).map(([ubicacion, datos]) => ({
           ubicacion,
           tipo: ubicacion.toLowerCase().includes('barra') ? 'barra' as const : 'mesa' as const,
           ordenesPendientes: datos.ordenes,
@@ -133,8 +151,8 @@ export default function TrasladoCuenta({ isOpen, onClose, onTrasladoCompleto }: 
   }
 
   // Obtener ubicaciones disponibles como destino (todas las ubicaciones posibles)
-  const obtenerUbicacionesDestino = () => {
-    const todasLasUbicaciones = []
+  const obtenerUbicacionesDestino = (): UbicacionDestino[] => {
+    const todasLasUbicaciones: UbicacionDestino[] = []
     
     // Agregar mesas (1-12)
     for (let i = 1; i <= 12; i++) {
@@ -160,12 +178,12 @@ export default function TrasladoCuenta({ isOpen, onClose, onTrasladoCompleto }: 
   const ubicacionesDestino = obtenerUbicacionesDestino()
 
   // Función para obtener emoji según tipo
-  const obtenerEmoji = (tipo: 'mesa' | 'barra') => {
+  const obtenerEmoji = (tipo: 'mesa' | 'barra'): string => {
     return tipo === 'mesa' ? '🪑' : '🍺'
   }
 
   // Función para obtener color según tipo
-  const obtenerColor = (tipo: 'mesa' | 'barra') => {
+  const obtenerColor = (tipo: 'mesa' | 'barra'): string => {
     return tipo === 'mesa' ? 'text-green-600' : 'text-amber-600'
   }
 
