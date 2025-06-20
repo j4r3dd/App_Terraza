@@ -27,7 +27,7 @@ export default function MeseroPage() {
   const [mensaje, setMensaje] = useState("")
   const [tipoActivo, setTipoActivo] = useState<"comida" | "bebida">("comida")
   const [busqueda, setBusqueda] = useState("")
-  const [pedidoConfirmado, setPedidoConfirmado] = useState(false) // Nuevo estado para confirmación
+  const [pedidoConfirmado, setPedidoConfirmado] = useState(false)
 
   const usuarioRaw = typeof window !== "undefined" ? localStorage.getItem("usuario") : null
   const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null
@@ -90,7 +90,7 @@ export default function MeseroPage() {
   // Confirmar pedido con la mesa
   const confirmarPedido = () => {
     setPedidoConfirmado(true)
-    setMensaje("✅ Pedido confirmado con la mesa. Ahora puedes enviarlo.")
+    setMensaje("✅ Pedido confirmado con la ubicación. Ahora puedes enviarlo.")
     
     // Limpiar mensaje después de 3 segundos
     setTimeout(() => setMensaje(""), 3000)
@@ -99,7 +99,7 @@ export default function MeseroPage() {
   // Enviar pedido (solo después de confirmación)
   const enviarPedido = async () => {
     if (!mesa || pedido.length === 0 || !pedidoConfirmado) {
-      setMensaje("❌ Confirma primero el pedido con la mesa")
+      setMensaje("❌ Confirma primero el pedido con la ubicación")
       return
     }
 
@@ -177,6 +177,11 @@ export default function MeseroPage() {
     )
   }
 
+  // Función para determinar si una ubicación es barra
+  const esBarra = (ubicacion: string) => {
+    return ubicacion.toLowerCase().includes('barra')
+  }
+
   return (
     <ProtectedRoute allowRoles={["mesero"]}>
       <main className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-6">
@@ -189,46 +194,86 @@ export default function MeseroPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">Panel de Mesero</h1>
-                <p className="text-gray-600">Gestión de pedidos y mesas</p>
+                <p className="text-gray-600">Gestión de pedidos y ubicaciones</p>
               </div>
             </div>
             <div className="text-right">
               {mesa ? (
-                <div className="bg-mesero-gradient text-white px-4 py-2 rounded-lg font-bold text-lg">
-                  {mesa} ✓
+                <div className={`text-white px-4 py-2 rounded-lg font-bold text-lg ${
+                  esBarra(mesa) 
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-600' 
+                    : 'bg-mesero-gradient'
+                }`}>
+                  {esBarra(mesa) ? '🍺' : '🪑'} {mesa} ✓
                 </div>
               ) : (
                 <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-medium border-2 border-yellow-300">
-                  Selecciona una mesa
+                  Selecciona una ubicación
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Selector de Mesa */}
+        {/* Selector de Ubicación (Mesas + Barra) */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-green-200">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="text-2xl mr-2">🪑</span>
-            Seleccionar Mesa
+            <span className="text-2xl mr-2">📍</span>
+            Seleccionar Ubicación
           </h2>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => {
-              const m = `Mesa ${i + 1}`
-              return (
-                <button
-                  key={m}
-                  onClick={() => setMesa(m)}
-                  className={`p-4 rounded-xl font-bold text-lg transition-all duration-200 hover-scale ${
-                    mesa === m 
-                      ? "bg-mesero-gradient text-white shadow-lg scale-105" 
-                      : "bg-gray-100 border-2 border-gray-300 text-gray-700 hover:border-green-400"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              )
-            })}
+          
+          {/* Sección Mesas */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+              <span className="text-xl mr-2">🪑</span>
+              Mesas (1-12)
+            </h3>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              {Array.from({ length: 12 }).map((_, i) => {
+                const m = `Mesa ${i + 1}`
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setMesa(m)}
+                    className={`p-4 rounded-xl font-bold text-lg transition-all duration-200 hover-scale flex flex-col items-center ${
+                      mesa === m 
+                        ? "bg-mesero-gradient text-white shadow-lg scale-105" 
+                        : "bg-gray-100 border-2 border-gray-300 text-gray-700 hover:border-green-400"
+                    }`}
+                  >
+                    <span className="text-2xl mb-1">🪑</span>
+                    <span>{i + 1}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Sección Barra */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+              <span className="text-xl mr-2">🍺</span>
+              Barra (1-8)
+            </h3>
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => {
+                const b = `Barra ${i + 1}`
+                return (
+                  <button
+                    key={b}
+                    onClick={() => setMesa(b)}
+                    className={`p-4 rounded-xl font-bold text-lg transition-all duration-200 hover-scale flex flex-col items-center ${
+                      mesa === b 
+                        ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg scale-105" 
+                        : "bg-amber-50 border-2 border-amber-300 text-amber-700 hover:border-amber-500"
+                    }`}
+                  >
+                    <span className="text-2xl mb-1">🍺</span>
+                    <span>{i + 1}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -422,7 +467,7 @@ export default function MeseroPage() {
                   {/* Indicador de estado de confirmación */}
                   {pedidoConfirmado && (
                     <div className="mt-4 bg-blue-100 border-2 border-blue-300 text-blue-800 p-3 rounded-xl text-center font-medium">
-                      ✅ Pedido confirmado con la mesa
+                      ✅ Pedido confirmado con {mesa && esBarra(mesa) ? 'la barra' : 'la mesa'}
                     </div>
                   )}
                 </>
@@ -450,14 +495,14 @@ export default function MeseroPage() {
                     ) : (
                       <>
                         <span className="text-2xl mr-2">✋</span>
-                        Confirmar con la Mesa
+                        Confirmar con {mesa && esBarra(mesa) ? 'la Barra' : 'la Mesa'}
                       </>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center">
                     <span className="text-2xl mr-2">⚠️</span>
-                    {!mesa ? "Selecciona una mesa" : "Agrega productos"}
+                    {!mesa ? "Selecciona una ubicación" : "Agrega productos"}
                   </div>
                 )}
               </button>
