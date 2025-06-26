@@ -6,7 +6,8 @@ export default function Home() {
   const router = useRouter()
 
   const handleMenuClick = () => {
-    router.push('/menu')
+    const menuPdfPath = '/menu-terraza-madero.pdf' // Cambia este nombre por el que uses
+    window.open(menuPdfPath, '_blank')
   }
 
   const handleEquipoClick = () => {
