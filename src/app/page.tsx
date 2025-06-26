@@ -6,9 +6,7 @@ export default function Home() {
   const router = useRouter()
 
   const handleMenuClick = () => {
-    // Redirigir directamente a la imagen menuu.png que está en la carpeta public/
-    const menuImagePath = '/menuu.png' // Esta ruta apunta a public/menuu.png
-    window.open(menuImagePath, '_blank')
+    router.push('/menu')
   }
 
   const handleEquipoClick = () => {
@@ -22,6 +20,9 @@ export default function Home() {
         <h1 className="text-6xl md:text-7xl font-bold text-amber-800 mb-4">
           Terraza Madero 
         </h1>
+        <p className="text-xl text-amber-700 font-medium">
+          🍻 Rooftop Experience 🍻
+        </p>
       </div>
 
       {/* Botón principal del MENÚ */}
@@ -30,11 +31,33 @@ export default function Home() {
           onClick={handleMenuClick}
           className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-4xl md:text-5xl font-bold py-8 px-16 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 border-4 border-white"
         >
-          📋 MENÚ
+          📋 NUESTRO MENÚ
         </button>
         <p className="text-center text-amber-700 mt-4 text-lg">
-          Ver nuestra carta completa
+          Ver nuestra carta completa en PDF
         </p>
+      </div>
+
+      {/* Información adicional */}
+      <div className="text-center mb-12 bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+        <h2 className="text-2xl font-bold text-amber-800 mb-4">¡Bienvenidos!</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-amber-700">
+          <div className="flex flex-col items-center">
+            <span className="text-4xl mb-2">🍽️</span>
+            <h3 className="font-semibold">Comida Deliciosa</h3>
+            <p className="text-sm">Platillos frescos y sabrosos</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-4xl mb-2">🍹</span>
+            <h3 className="font-semibold">Bebidas Refrescantes</h3>
+            <p className="text-sm">Cocteles y bebidas variadas</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-4xl mb-2">🌅</span>
+            <h3 className="font-semibold">Vista Increíble</h3>
+            <p className="text-sm">Experiencia rooftop única</p>
+          </div>
+        </div>
       </div>
 
       {/* Botón pequeño del EQUIPO */}
