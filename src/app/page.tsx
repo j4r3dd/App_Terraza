@@ -6,8 +6,13 @@ export default function Home() {
   const router = useRouter()
 
   const handleMenuClick = () => {
-    const menuPdfPath = '/menu-terraza-madero.pdf' // Cambia este nombre por el que uses
+    const menuPdfPath = '/menu-terraza-madero.pdf'
     window.open(menuPdfPath, '_blank')
+  }
+
+  const handleCoctelesClick = () => {
+    const coctelesPdfPath = '/cocteles_madero.pdf'
+    window.open(coctelesPdfPath, '_blank')
   }
 
   const handleEquipoClick = () => {
@@ -26,17 +31,33 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Botón principal del MENÚ */}
-      <div className="mb-20">
-        <button
-          onClick={handleMenuClick}
-          className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-4xl md:text-5xl font-bold py-8 px-16 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 border-4 border-white"
-        >
-          📋 NUESTRO MENÚ
-        </button>
-        <p className="text-center text-amber-700 mt-4 text-lg">
-          Ver nuestra carta completa en PDF
-        </p>
+      {/* Botones principales */}
+      <div className="flex flex-col md:flex-row gap-8 mb-20">
+        {/* Botón del MENÚ */}
+        <div className="text-center">
+          <button
+            onClick={handleMenuClick}
+            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-3xl md:text-4xl font-bold py-6 px-12 md:py-8 md:px-16 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 border-4 border-white"
+          >
+            📋 NUESTRO MENÚ
+          </button>
+          <p className="text-center text-amber-700 mt-4 text-lg">
+            Ver nuestra carta completa
+          </p>
+        </div>
+
+        {/* Botón de CÓCTELES */}
+        <div className="text-center">
+          <button
+            onClick={handleCoctelesClick}
+            className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white text-3xl md:text-4xl font-bold py-6 px-12 md:py-8 md:px-16 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 border-4 border-white"
+          >
+            🍹 CÓCTELES
+          </button>
+          <p className="text-center text-amber-700 mt-4 text-lg">
+            Nuestra carta de bebidas especiales
+          </p>
+        </div>
       </div>
 
       {/* Información adicional */}
