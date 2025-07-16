@@ -8,8 +8,10 @@ const CarouselBanner = () => {
   
   const images = [
     { src: '/Cumpleañero.jpeg', alt: 'Cumpleañero' },
+    { src: '/MiercolesyJueves.jpeg', alt: 'Miercoles' },
     { src: '/Jueves.jpeg', alt: 'Jueves' },
-    { src: '/Viernes.jpeg', alt: 'Viernes' }
+    { src: '/Viernes.jpeg', alt: 'Viernes' },
+    { src: '/Sabado.jpeg', alt: 'Sabado' },
   ]
 
   useEffect(() => {
@@ -45,7 +47,7 @@ const CarouselBanner = () => {
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              className={`w-3 h-3 rounded-full transition-all duration-500 ${
                 index === currentIndex 
                   ? 'bg-white scale-125' 
                   : 'bg-white/50 hover:bg-white/80'
